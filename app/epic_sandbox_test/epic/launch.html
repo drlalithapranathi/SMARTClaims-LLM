@@ -5,103 +5,35 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Epic SMART App - Launching...</title>
     <script src="https://cdn.jsdelivr.net/npm/fhirclient/build/fhir-client.js"></script>
-    <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-        }
-        .loading {
-            text-align: center;
-        }
-        .spinner {
-            border: 4px solid rgba(255,255,255,0.3);
-            border-radius: 50%;
-            border-top: 4px solid white;
-            width: 50px;
-            height: 50px;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 20px;
-        }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-    </style>
+    <script src="config.js"></script>
 </head>
 <body>
-    <div class="loading">
-        <div class="spinner"></div>
+    <div>
         <h2>Connecting to Epic...</h2>
-        <p>Please wait while we establish a secure connection.</p>
+        <p>Please wait...</p>
     </div>
     <script>
-        /**
-         * Epic SMART on FHIR EHR Launch
-         *
-         * This page is called by Epic with two query parameters:
-         * - iss: The FHIR server base URL
-         * - launch: A one-time use token for this launch session
-         *
-         * The fhirclient library handles the OAuth2 flow automatically.
-         * 
-         * NOTE: For "Clinicians" audience apps, Epic grants user/ scopes, not patient/ scopes.
-         * We request user/ scopes to match what will be granted.
-         */
-        
-        // Configuration for Epic
-        const EPIC_CONFIG = {
-            // Your Non-Production Client ID
-            clientId: "2b4759e7-6f7f-49e6-b1ab-c38d02f83bc7",
-            
-            // Scopes for EHR launch with Clinician audience
-            // - launch: Required for EHR launch (receives context from Epic)
-            // - openid: Required for OpenID Connect
-            // - user/Patient.read: Read patient data (for clinician apps)
-            // - user/Condition.read: Read conditions
-            // - user/Observation.read: Read observations/vitals
-            scope: "launch openid user/Patient.read user/Condition.read user/Observation.read",
-            
-            // Where to redirect after authorization
-            redirectUri: "http://localhost:3000/epic/callback/index.html"
-        };
-        
-        // Check if we have the required launch parameters
         const urlParams = new URLSearchParams(window.location.search);
         const iss = urlParams.get('iss');
         const launch = urlParams.get('launch');
         
         if (!iss || !launch) {
             document.body.innerHTML = `
-                <div style="text-align: center; padding: 40px;">
-                    <h2>⚠️ Invalid Launch</h2>
+                <div>
+                    <h2>Invalid Launch</h2>
                     <p>This app must be launched from within Epic.</p>
                     <p>Missing parameters: ${!iss ? 'iss ' : ''}${!launch ? 'launch' : ''}</p>
-                    <hr style="margin: 20px 0; border-color: rgba(255,255,255,0.3);">
-                    <p><strong>For testing:</strong></p>
-                    <p>Use Epic's Launch Pad at <a href="https://fhir.epic.com/Documentation?docId=launching" style="color: white;">fhir.epic.com</a></p>
+                    <p>Use Epic's Launch Pad at <a href="https://fhir.epic.com/Documentation?docId=launching">fhir.epic.com</a></p>
                 </div>
             `;
         } else {
-            console.log("Launch parameters received:");
-            console.log("  iss:", iss);
-            console.log("  launch:", launch);
-            console.log("Requesting scopes:", EPIC_CONFIG.scope);
-            
-            // Initiate the SMART authorization flow
             FHIR.oauth2.authorize(EPIC_CONFIG)
                 .catch(function(error) {
-                    console.error("Authorization error:", error);
                     document.body.innerHTML = `
-                        <div style="text-align: center; padding: 40px;">
-                            <h2>❌ Authorization Failed</h2>
+                        <div>
+                            <h2>Authorization Failed</h2>
                             <p>${error.message || 'Unknown error occurred'}</p>
-                            <p style="font-size: 12px; opacity: 0.8;">Check browser console for details</p>
+                            <p>Check browser console for details</p>
                         </div>
                     `;
                 });

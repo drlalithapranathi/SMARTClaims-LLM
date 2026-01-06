@@ -1,0 +1,9 @@
+.idea/
+config.js
+*.env
+.env
+.env.local
+__pycache__/
+*.pyc
+*.pyo
+node_modules/
