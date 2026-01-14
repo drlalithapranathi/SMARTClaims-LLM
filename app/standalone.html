@@ -31,15 +31,11 @@
             <h2>EHR Connection</h2>
             <p>Choose your healthcare system to authorize data access:</p>
 
-            <div class="form-group">
-                <label>Select EHR System</label>
-                <select id="ehrSelect" class="ehr-dropdown">
-                    <option value="">-- Select an EHR --</option>
-                    <option value="epic">Epic (Epic Systems Corporation)</option>
-                    <option value="cerner">Cerner (Oracle Health)</option>
-                    <option value="openemr">OpenEMR (Open Source EHR)</option>
-                    <option value="custom">Custom FHIR Server</option>
-                </select>
+            <div class="ehr-grid">
+                <div class="ehr-option" data-ehr="epic"><h3>Epic</h3><p>Epic Systems Corporation</p></div>
+                <div class="ehr-option" data-ehr="cerner"><h3>Cerner</h3><p>Oracle Health</p></div>
+                <div class="ehr-option" data-ehr="openemr"><h3>OpenEMR</h3><p>Open Source EHR</p></div>
+                <div class="ehr-option" data-ehr="custom"><h3>Custom FHIR</h3><p>Custom FHIR Server</p></div>
             </div>
 
             <div class="custom-form" id="customForm">
