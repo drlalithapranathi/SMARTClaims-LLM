@@ -68,6 +68,7 @@ header h1 { margin: 0; font-size: 24px; }
 }
 .card.standalone { padding: 40px; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2); }
 .card h2 { margin-top: 0; color: #0077be; font-size: 18px; border-bottom: 2px solid #f0f0f0; padding-bottom: 10px; }
+.section-description { font-size: 13px; color: #666; margin: -5px 0 15px 0; }
 
 /* Patient Header */
 .patient-header { display: flex; align-items: center; gap: 20px; }
@@ -107,7 +108,7 @@ header h1 { margin: 0; font-size: 24px; }
 .empty { text-align: center; padding: 30px; color: #888; }
 
 /* Tabs */
-.tabs { display: flex; gap: 10px; margin-bottom: 20px; }
+.tabs { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px; }
 .tab { padding: 10px 20px; background: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; transition: all 0.2s; }
 .tab:hover { background: #f0f0f0; }
 .tab.active { background: linear-gradient(135deg, #0077be 0%, #005a8c 100%); color: white; }
