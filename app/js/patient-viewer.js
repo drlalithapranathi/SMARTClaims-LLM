@@ -118,7 +118,7 @@ function buildTabsUI() {
             <button class="tab" data-tab="vitals">Vitals</button>
             <button class="tab" data-tab="diagnostics">Diagnostic Reports</button>
             <button class="tab" data-tab="procedures">Procedures</button>
-            <button class="tab" data-tab="documents">Documents</button>
+            <button class="tab" data-tab="documents">Radiology Docs</button>
             <button class="tab" data-tab="debug">Debug Info</button>
         </div>
         <div id="conditions" class="tab-content active"><div class="card"><h2>Active Conditions</h2><div id="conditions-list" class="loading"><div class="spinner"></div><p>Loading...</p></div></div></div>
@@ -127,7 +127,7 @@ function buildTabsUI() {
         <div id="vitals" class="tab-content"><div class="card"><h2>Recent Vitals</h2><div id="vitals-list" class="loading"><div class="spinner"></div><p>Loading...</p></div></div></div>
         <div id="diagnostics" class="tab-content"><div class="card"><h2>Diagnostic Reports</h2><p class="section-description">Lab results, imaging, cardiology, and other diagnostic reports</p><div id="diagnostics-list" class="loading"><div class="spinner"></div><p>Loading...</p></div></div></div>
         <div id="procedures" class="tab-content"><div class="card"><h2>Procedures</h2><p class="section-description">Surgeries, biopsies, endoscopies, and other performed procedures</p><div id="procedures-list" class="loading"><div class="spinner"></div><p>Loading...</p></div></div></div>
-        <div id="documents" class="tab-content"><div class="card"><h2>Document References</h2><p class="section-description">Radiology results and associated documentation</p><div id="documents-list" class="loading"><div class="spinner"></div><p>Loading...</p></div></div></div>
+        <div id="documents" class="tab-content"><div class="card"><h2>Radiology Documents</h2><p class="section-description">Radiology results documentation with PDF references</p><div id="documents-list" class="loading"><div class="spinner"></div><p>Loading...</p></div></div></div>
         <div id="debug" class="tab-content"><div class="card"><h2>Debug Information</h2><div class="debug-section" id="debug-info">Loading...</div></div></div>
     `;
 }
@@ -281,20 +281,16 @@ async function loadProcedures() {
     }
 }
 
-// DocumentReference - Radiology results documentation
+// DocumentReference - Radiology results documentation (per Epic FHIR R4 API)
 async function loadDocumentReferences() {
     const container = document.getElementById('documents-list');
     try {
-        // Try with category filter for radiology first, fall back to all documents
-        let bundle;
-        try {
-            bundle = await client.request(`DocumentReference?patient=${client.patient.id}&category=http://loinc.org|18726-0&_count=50`);
-        } catch {
-            bundle = await client.request(`DocumentReference?patient=${client.patient.id}&_count=50`);
-        }
+        // Epic's DocumentReference (Radiology Results) API - returns radiology result documentation
+        // including references to Binary resources containing PDFs
+        const bundle = await client.request(`DocumentReference?patient=${client.patient.id}&_count=50`);
         const documents = bundle.entry?.map(e => e.resource) || [];
         if (documents.length === 0) {
-            container.innerHTML = '<div class="empty">No document references found</div>';
+            container.innerHTML = '<div class="empty">No radiology documents found</div>';
             return;
         }
         container.innerHTML = documents.map(d => {
@@ -305,11 +301,15 @@ async function loadDocumentReferences() {
             const category = d.category?.[0]?.coding?.[0]?.display || d.category?.[0]?.text || '';
             const author = d.author?.[0]?.display || '';
             const contentType = d.content?.[0]?.attachment?.contentType || '';
+            // Check if there's a Binary reference for the PDF
+            const binaryUrl = d.content?.[0]?.attachment?.url || '';
+            const hasPdf = binaryUrl.includes('Binary') || contentType === 'application/pdf';
             const statusClass = status === 'current' ? '' : 'warning';
             let details = [];
             if (category) details.push(category);
             if (author) details.push(`Author: ${author}`);
-            if (contentType) details.push(`Type: ${contentType}`);
+            if (contentType) details.push(`Format: ${contentType}`);
+            if (hasPdf) details.push('PDF Available');
             return `<div class="list-item ${statusClass}">
                 <strong>${description}</strong>
                 <small>Status: ${status} | Date: ${date}</small>
@@ -318,6 +318,6 @@ async function loadDocumentReferences() {
         }).join('');
     } catch (error) {
         console.error("Error loading document references:", error);
-        container.innerHTML = `<div class="error">Error loading document references: ${error.message}</div>`;
+        container.innerHTML = `<div class="error">Error loading radiology documents: ${error.message}</div>`;
     }
 }
