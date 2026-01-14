@@ -1,6 +1,5 @@
-# SMARTClaims
-
-AI-powered medical billing assistant that extracts billable procedures from radiology reports using GraphRAG-enhanced LLM, integrated with SMART on FHIR for EHR connectivity.
+# SmartClaims: A GraphRAG solution for radiology billing validation
+AI-powered SMART on FHIR app using GraphRAG to detect billing discrepancies in radiology reports
 
 ## Project Structure
 
