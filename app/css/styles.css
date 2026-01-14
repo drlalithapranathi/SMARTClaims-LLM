@@ -98,7 +98,9 @@ header h1 { margin: 0; font-size: 24px; }
 .list-item.warning { border-left-color: #f5a623; }
 .list-item.danger { border-left-color: #e74c3c; }
 .list-item strong { display: block; margin-bottom: 3px; }
-.list-item small { color: #888; }
+.list-item small { color: #888; display: block; }
+.pdf-btn { margin-top: 8px; padding: 6px 12px; background: #0077be; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; }
+.pdf-btn:hover { background: #005a8c; }
 
 /* Loading & States */
 .loading { text-align: center; padding: 40px; color: #888; }

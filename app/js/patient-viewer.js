@@ -57,6 +57,7 @@ async function loadPatientData() {
         loadDiagnosticReports();
         loadProcedures();
         loadDocumentReferences();
+        loadClinicalNotes();
     } catch (error) {
         console.error("Error loading patient:", error);
         document.getElementById('content').innerHTML = `<div class="card"><div class="error"><strong>Error Loading Patient</strong><p>${error.message}</p></div></div>`;
@@ -119,6 +120,7 @@ function buildTabsUI() {
             <button class="tab" data-tab="diagnostics">Diagnostic Reports</button>
             <button class="tab" data-tab="procedures">Procedures</button>
             <button class="tab" data-tab="documents">Radiology Docs</button>
+            <button class="tab" data-tab="notes">Clinical Notes</button>
             <button class="tab" data-tab="debug">Debug Info</button>
         </div>
         <div id="conditions" class="tab-content active"><div class="card"><h2>Active Conditions</h2><div id="conditions-list" class="loading"><div class="spinner"></div><p>Loading...</p></div></div></div>
@@ -128,6 +130,7 @@ function buildTabsUI() {
         <div id="diagnostics" class="tab-content"><div class="card"><h2>Diagnostic Reports</h2><p class="section-description">Lab results, imaging, cardiology, and other diagnostic reports</p><div id="diagnostics-list" class="loading"><div class="spinner"></div><p>Loading...</p></div></div></div>
         <div id="procedures" class="tab-content"><div class="card"><h2>Procedures</h2><p class="section-description">Surgeries, biopsies, endoscopies, and other performed procedures</p><div id="procedures-list" class="loading"><div class="spinner"></div><p>Loading...</p></div></div></div>
         <div id="documents" class="tab-content"><div class="card"><h2>Radiology Documents</h2><p class="section-description">Radiology results documentation with PDF references</p><div id="documents-list" class="loading"><div class="spinner"></div><p>Loading...</p></div></div></div>
+        <div id="notes" class="tab-content"><div class="card"><h2>Clinical Notes</h2><p class="section-description">Progress notes, discharge summaries, H&P, consultations</p><div id="notes-list" class="loading"><div class="spinner"></div><p>Loading...</p></div></div></div>
         <div id="debug" class="tab-content"><div class="card"><h2>Debug Information</h2><div class="debug-section" id="debug-info">Loading...</div></div></div>
     `;
 }
@@ -293,7 +296,7 @@ async function loadDocumentReferences() {
             container.innerHTML = '<div class="empty">No radiology documents found</div>';
             return;
         }
-        container.innerHTML = documents.map(d => {
+        container.innerHTML = documents.map((d, index) => {
             const description = d.description || d.type?.text || d.type?.coding?.[0]?.display || 'Unknown Document';
             const status = d.status || 'unknown';
             const date = d.date ? new Date(d.date).toLocaleDateString() :
@@ -301,23 +304,81 @@ async function loadDocumentReferences() {
             const category = d.category?.[0]?.coding?.[0]?.display || d.category?.[0]?.text || '';
             const author = d.author?.[0]?.display || '';
             const contentType = d.content?.[0]?.attachment?.contentType || '';
-            // Check if there's a Binary reference for the PDF
             const binaryUrl = d.content?.[0]?.attachment?.url || '';
-            const hasPdf = binaryUrl.includes('Binary') || contentType === 'application/pdf';
+            const hasPdf = binaryUrl && (binaryUrl.includes('Binary') || contentType === 'application/pdf');
             const statusClass = status === 'current' ? '' : 'warning';
             let details = [];
             if (category) details.push(category);
             if (author) details.push(`Author: ${author}`);
             if (contentType) details.push(`Format: ${contentType}`);
-            if (hasPdf) details.push('PDF Available');
+            const pdfButton = hasPdf ? `<button class="pdf-btn" onclick="viewPdf('${binaryUrl}')">View PDF</button>` : '';
             return `<div class="list-item ${statusClass}">
                 <strong>${description}</strong>
                 <small>Status: ${status} | Date: ${date}</small>
                 ${details.length > 0 ? `<small>${details.join(' | ')}</small>` : ''}
+                ${pdfButton}
             </div>`;
         }).join('');
     } catch (error) {
         console.error("Error loading document references:", error);
         container.innerHTML = `<div class="error">Error loading radiology documents: ${error.message}</div>`;
+    }
+}
+
+// Fetch and display PDF from Binary resource
+async function viewPdf(binaryUrl) {
+    try {
+        // Extract Binary ID from URL if it's a relative reference
+        const binaryId = binaryUrl.includes('/') ? binaryUrl.split('/').pop() : binaryUrl;
+        const binary = await client.request(`Binary/${binaryId}`);
+        if (binary.data) {
+            // Base64 encoded PDF - open in new tab
+            const pdfData = `data:application/pdf;base64,${binary.data}`;
+            window.open(pdfData, '_blank');
+        } else if (binary.contentType === 'application/pdf') {
+            // Direct content
+            window.open(binaryUrl, '_blank');
+        }
+    } catch (error) {
+        console.error("Error loading PDF:", error);
+        alert('Unable to load PDF: ' + error.message);
+    }
+}
+
+// Clinical Notes - Progress notes, discharge summaries, H&P, consultations (per Epic FHIR R4 API)
+async function loadClinicalNotes() {
+    const container = document.getElementById('notes-list');
+    try {
+        // Epic's DocumentReference (Clinical Notes) API with category=clinical-note
+        const bundle = await client.request(`DocumentReference?patient=${client.patient.id}&category=clinical-note&_count=50`);
+        const notes = bundle.entry?.map(e => e.resource) || [];
+        if (notes.length === 0) {
+            container.innerHTML = '<div class="empty">No clinical notes found</div>';
+            return;
+        }
+        container.innerHTML = notes.map(n => {
+            const noteType = n.type?.text || n.type?.coding?.[0]?.display || 'Clinical Note';
+            const status = n.status || 'unknown';
+            const docStatus = n.docStatus || '';
+            const date = n.date ? new Date(n.date).toLocaleDateString() :
+                         n.context?.period?.start ? new Date(n.context.period.start).toLocaleDateString() : 'Date unknown';
+            const author = n.author?.[0]?.display || '';
+            const encounter = n.context?.encounter?.[0]?.display || '';
+            const description = n.description || '';
+            const statusClass = status === 'current' ? '' : 'warning';
+            let details = [];
+            if (author) details.push(`Author: ${author}`);
+            if (encounter) details.push(`Encounter: ${encounter}`);
+            if (docStatus) details.push(`Doc Status: ${docStatus}`);
+            return `<div class="list-item ${statusClass}">
+                <strong>${noteType}</strong>
+                <small>Date: ${date} | Status: ${status}</small>
+                ${details.length > 0 ? `<small>${details.join(' | ')}</small>` : ''}
+                ${description ? `<small><em>${description.substring(0, 200)}${description.length > 200 ? '...' : ''}</em></small>` : ''}
+            </div>`;
+        }).join('');
+    } catch (error) {
+        console.error("Error loading clinical notes:", error);
+        container.innerHTML = `<div class="error">Error loading clinical notes: ${error.message}</div>`;
     }
 }
