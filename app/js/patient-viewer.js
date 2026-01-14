@@ -54,6 +54,9 @@ async function loadPatientData() {
         loadMedications();
         loadAllergies();
         loadObservations();
+        loadDiagnosticReports();
+        loadProcedures();
+        loadDocumentReferences();
     } catch (error) {
         console.error("Error loading patient:", error);
         document.getElementById('content').innerHTML = `<div class="card"><div class="error"><strong>Error Loading Patient</strong><p>${error.message}</p></div></div>`;
@@ -113,12 +116,18 @@ function buildTabsUI() {
             <button class="tab" data-tab="medications">Medications</button>
             <button class="tab" data-tab="allergies">Allergies</button>
             <button class="tab" data-tab="vitals">Vitals</button>
+            <button class="tab" data-tab="diagnostics">Diagnostic Reports</button>
+            <button class="tab" data-tab="procedures">Procedures</button>
+            <button class="tab" data-tab="documents">Documents</button>
             <button class="tab" data-tab="debug">Debug Info</button>
         </div>
         <div id="conditions" class="tab-content active"><div class="card"><h2>Active Conditions</h2><div id="conditions-list" class="loading"><div class="spinner"></div><p>Loading...</p></div></div></div>
         <div id="medications" class="tab-content"><div class="card"><h2>Current Medications</h2><div id="medications-list" class="loading"><div class="spinner"></div><p>Loading...</p></div></div></div>
         <div id="allergies" class="tab-content"><div class="card"><h2>Allergies</h2><div id="allergies-list" class="loading"><div class="spinner"></div><p>Loading...</p></div></div></div>
         <div id="vitals" class="tab-content"><div class="card"><h2>Recent Vitals</h2><div id="vitals-list" class="loading"><div class="spinner"></div><p>Loading...</p></div></div></div>
+        <div id="diagnostics" class="tab-content"><div class="card"><h2>Diagnostic Reports</h2><p class="section-description">Lab results, imaging, cardiology, and other diagnostic reports</p><div id="diagnostics-list" class="loading"><div class="spinner"></div><p>Loading...</p></div></div></div>
+        <div id="procedures" class="tab-content"><div class="card"><h2>Procedures</h2><p class="section-description">Surgeries, biopsies, endoscopies, and other performed procedures</p><div id="procedures-list" class="loading"><div class="spinner"></div><p>Loading...</p></div></div></div>
+        <div id="documents" class="tab-content"><div class="card"><h2>Document References</h2><p class="section-description">Radiology results and associated documentation</p><div id="documents-list" class="loading"><div class="spinner"></div><p>Loading...</p></div></div></div>
         <div id="debug" class="tab-content"><div class="card"><h2>Debug Information</h2><div class="debug-section" id="debug-info">Loading...</div></div></div>
     `;
 }
@@ -205,4 +214,110 @@ function loadDebugInfo() {
         "Scope": client.state.tokenResponse?.scope,
         "Client ID": client.state.clientId
     }, null, 2);
+}
+
+// DiagnosticReport - Lab results, imaging, cardiology, endoscopy, audiology, EKG data
+async function loadDiagnosticReports() {
+    const container = document.getElementById('diagnostics-list');
+    try {
+        const bundle = await client.request(`DiagnosticReport?patient=${client.patient.id}&_count=50`);
+        const reports = bundle.entry?.map(e => e.resource) || [];
+        if (reports.length === 0) {
+            container.innerHTML = '<div class="empty">No diagnostic reports found</div>';
+            return;
+        }
+        container.innerHTML = reports.map(r => {
+            const name = r.code?.text || r.code?.coding?.[0]?.display || 'Unknown Report';
+            const status = r.status || 'unknown';
+            const date = r.effectiveDateTime ? new Date(r.effectiveDateTime).toLocaleDateString() :
+                         r.issued ? new Date(r.issued).toLocaleDateString() : 'Date unknown';
+            const category = r.category?.[0]?.coding?.[0]?.display || r.category?.[0]?.text || '';
+            const conclusion = r.conclusion ? `<br><em>${r.conclusion.substring(0, 150)}${r.conclusion.length > 150 ? '...' : ''}</em>` : '';
+            const statusClass = status === 'final' ? '' : status === 'preliminary' ? 'warning' : '';
+            return `<div class="list-item ${statusClass}">
+                <strong>${name}</strong>
+                <small>${category ? category + ' | ' : ''}Status: ${status} | Date: ${date}</small>
+                ${conclusion}
+            </div>`;
+        }).join('');
+    } catch (error) {
+        console.error("Error loading diagnostic reports:", error);
+        container.innerHTML = `<div class="error">Error loading diagnostic reports: ${error.message}</div>`;
+    }
+}
+
+// Procedure - Surgeries, biopsies, endoscopies, counseling, physiotherapy
+async function loadProcedures() {
+    const container = document.getElementById('procedures-list');
+    try {
+        const bundle = await client.request(`Procedure?patient=${client.patient.id}&_count=50`);
+        const procedures = bundle.entry?.map(e => e.resource) || [];
+        if (procedures.length === 0) {
+            container.innerHTML = '<div class="empty">No procedures found</div>';
+            return;
+        }
+        container.innerHTML = procedures.map(p => {
+            const name = p.code?.text || p.code?.coding?.[0]?.display || 'Unknown Procedure';
+            const status = p.status || 'unknown';
+            const performedDate = p.performedDateTime ? new Date(p.performedDateTime).toLocaleDateString() :
+                                  p.performedPeriod?.start ? new Date(p.performedPeriod.start).toLocaleDateString() : 'Date unknown';
+            const category = p.category?.coding?.[0]?.display || p.category?.text || '';
+            const performer = p.performer?.[0]?.actor?.display || '';
+            const location = p.location?.display || '';
+            const statusClass = status === 'completed' ? '' : status === 'in-progress' ? 'warning' : '';
+            let details = [];
+            if (category) details.push(category);
+            if (performer) details.push(`Performed by: ${performer}`);
+            if (location) details.push(`Location: ${location}`);
+            return `<div class="list-item ${statusClass}">
+                <strong>${name}</strong>
+                <small>Status: ${status} | Date: ${performedDate}</small>
+                ${details.length > 0 ? `<small>${details.join(' | ')}</small>` : ''}
+            </div>`;
+        }).join('');
+    } catch (error) {
+        console.error("Error loading procedures:", error);
+        container.innerHTML = `<div class="error">Error loading procedures: ${error.message}</div>`;
+    }
+}
+
+// DocumentReference - Radiology results documentation
+async function loadDocumentReferences() {
+    const container = document.getElementById('documents-list');
+    try {
+        // Try with category filter for radiology first, fall back to all documents
+        let bundle;
+        try {
+            bundle = await client.request(`DocumentReference?patient=${client.patient.id}&category=http://loinc.org|18726-0&_count=50`);
+        } catch {
+            bundle = await client.request(`DocumentReference?patient=${client.patient.id}&_count=50`);
+        }
+        const documents = bundle.entry?.map(e => e.resource) || [];
+        if (documents.length === 0) {
+            container.innerHTML = '<div class="empty">No document references found</div>';
+            return;
+        }
+        container.innerHTML = documents.map(d => {
+            const description = d.description || d.type?.text || d.type?.coding?.[0]?.display || 'Unknown Document';
+            const status = d.status || 'unknown';
+            const date = d.date ? new Date(d.date).toLocaleDateString() :
+                         d.context?.period?.start ? new Date(d.context.period.start).toLocaleDateString() : 'Date unknown';
+            const category = d.category?.[0]?.coding?.[0]?.display || d.category?.[0]?.text || '';
+            const author = d.author?.[0]?.display || '';
+            const contentType = d.content?.[0]?.attachment?.contentType || '';
+            const statusClass = status === 'current' ? '' : 'warning';
+            let details = [];
+            if (category) details.push(category);
+            if (author) details.push(`Author: ${author}`);
+            if (contentType) details.push(`Type: ${contentType}`);
+            return `<div class="list-item ${statusClass}">
+                <strong>${description}</strong>
+                <small>Status: ${status} | Date: ${date}</small>
+                ${details.length > 0 ? `<small>${details.join(' | ')}</small>` : ''}
+            </div>`;
+        }).join('');
+    } catch (error) {
+        console.error("Error loading document references:", error);
+        container.innerHTML = `<div class="error">Error loading document references: ${error.message}</div>`;
+    }
 }
