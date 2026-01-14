@@ -151,8 +151,9 @@ header h1 { margin: 0; font-size: 24px; }
 .custom-form.show { display: block; }
 .form-group { margin-bottom: 15px; }
 .form-group label { display: block; font-size: 14px; font-weight: 500; margin-bottom: 5px; color: #333; }
-.form-group input { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; }
-.form-group input:focus { outline: none; border-color: #0077be; }
+.form-group input, .form-group select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; background: white; }
+.form-group input:focus, .form-group select:focus { outline: none; border-color: #0077be; }
+.ehr-dropdown { cursor: pointer; }
 
 /* Buttons */
 .btn { background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); color: white; border: none; padding: 14px 24px; font-size: 15px; font-weight: 600; border-radius: 8px; cursor: pointer; width: 100%; transition: all 0.2s ease; box-shadow: 0 4px 12px rgba(30, 60, 114, 0.3); }

@@ -1,15 +1,11 @@
 let selectedEHR = null;
 
-document.querySelectorAll('.ehr-option').forEach(option => {
-    option.addEventListener('click', function() {
-        document.querySelectorAll('.ehr-option').forEach(opt => opt.classList.remove('selected'));
-        this.classList.add('selected');
-        selectedEHR = this.dataset.ehr;
-        const customForm = document.getElementById('customForm');
-        if (selectedEHR === 'custom') customForm.classList.add('show');
-        else customForm.classList.remove('show');
-        document.getElementById('launchBtn').disabled = false;
-    });
+document.getElementById('ehrSelect').addEventListener('change', function() {
+    selectedEHR = this.value;
+    const customForm = document.getElementById('customForm');
+    if (selectedEHR === 'custom') customForm.classList.add('show');
+    else customForm.classList.remove('show');
+    document.getElementById('launchBtn').disabled = !selectedEHR;
 });
 
 document.getElementById('launchBtn').addEventListener('click', function() {
