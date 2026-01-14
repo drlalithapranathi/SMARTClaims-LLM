@@ -1,5 +1,6 @@
 .idea/
 config.js
+app/js/app-config.js
 *.env
 .env
 .env.local

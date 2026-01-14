@@ -3,47 +3,270 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Epic Patient Viewer</title>
+    <title>SmartClaims - Patient Viewer</title>
     <script src="https://cdn.jsdelivr.net/npm/fhirclient/build/fhir-client.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f5f7fa;
+            color: #333;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        header {
+            background: linear-gradient(135deg, #0077be 0%, #005a8c 100%);
+            color: white;
+            padding: 20px 30px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 12px rgba(0, 119, 190, 0.2);
+        }
+        header h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+        .epic-badge {
+            background: rgba(255,255,255,0.2);
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+        }
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        .card h2 {
+            margin-top: 0;
+            color: #0077be;
+            font-size: 18px;
+            border-bottom: 2px solid #f0f0f0;
+            padding-bottom: 10px;
+        }
+        .patient-header {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        .patient-avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #0077be 0%, #00a8cc 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 32px;
+            font-weight: bold;
+        }
+        .patient-info h3 {
+            margin: 0 0 5px 0;
+            font-size: 24px;
+        }
+        .patient-info p {
+            margin: 0;
+            color: #666;
+        }
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .info-item {
+            background: #f8f9fc;
+            padding: 15px;
+            border-radius: 8px;
+        }
+        .info-item label {
+            display: block;
+            font-size: 12px;
+            color: #888;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+        .info-item span {
+            font-size: 16px;
+            font-weight: 500;
+        }
+        .list-item {
+            padding: 12px 15px;
+            border-left: 3px solid #0077be;
+            background: #f8f9fc;
+            margin-bottom: 10px;
+            border-radius: 0 8px 8px 0;
+        }
+        .list-item.warning {
+            border-left-color: #f5a623;
+        }
+        .list-item.danger {
+            border-left-color: #e74c3c;
+        }
+        .list-item strong {
+            display: block;
+            margin-bottom: 3px;
+        }
+        .list-item small {
+            color: #888;
+        }
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #888;
+        }
+        .spinner {
+            border: 3px solid #f0f0f0;
+            border-radius: 50%;
+            border-top: 3px solid #0077be;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .error {
+            background: #fff5f5;
+            border: 1px solid #fed7d7;
+            color: #c53030;
+            padding: 15px;
+            border-radius: 8px;
+        }
+        .empty {
+            text-align: center;
+            padding: 30px;
+            color: #888;
+        }
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .tab {
+            padding: 10px 20px;
+            background: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+        .tab:hover {
+            background: #f0f0f0;
+        }
+        .tab.active {
+            background: linear-gradient(135deg, #0077be 0%, #005a8c 100%);
+            color: white;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        #user-info {
+            font-size: 12px;
+            opacity: 0.9;
+        }
+        .debug-section {
+            background: #1a1a2e;
+            color: #00ff00;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 200px;
+            overflow: auto;
+        }
+    </style>
 </head>
 <body>
     <div class="container">
         <header>
             <div>
-                <h1>🏥 Epic Patient Viewer</h1>
+                <h1>🏥 SmartClaims</h1>
                 <div id="user-info"></div>
             </div>
-            <div class="epic-badge">Connected to Epic</div>
+            <div class="epic-badge" id="ehr-badge">Connected to EHR</div>
         </header>
 
         <div id="content">
             <div class="loading">
                 <div class="spinner"></div>
-                <p>Loading patient data from Epic...</p>
+                <p>Loading patient data...</p>
             </div>
         </div>
     </div>
 
     <script>
+        /**
+         * SmartClaims - Interoperable Patient Viewer
+         *
+         * This page handles the callback from any EHR's authorization server
+         * (Epic, Cerner, OpenEMR) and displays patient data from the FHIR API.
+         */
+
+        // Global FHIR client
         let client = null;
+
+        // Initialize the app
         FHIR.oauth2.ready()
             .then(function(smartClient) {
                 client = smartClient;
+                console.log("SMART client ready:", client);
+
+                // Update EHR badge based on server URL
+                updateEHRBadge();
+
+                // Display user info if available
                 displayUserInfo();
+
+                // Load all patient data
                 return loadPatientData();
             })
             .catch(function(error) {
+                console.error("SMART initialization error:", error);
                 document.getElementById('content').innerHTML = `
                     <div class="card">
                         <div class="error">
                             <strong>❌ Connection Failed</strong>
-                            <p>${error.message || 'Failed to connect to Epic'}</p>
-                            <p style="font-size: 12px;">Make sure you launched from Epic's LaunchPad at 
-                               <a href="https://open.epic.com/Launchpad/OAuth2Sso">open.epic.com/Launchpad</a></p>
+                            <p>${error.message || 'Failed to connect to EHR'}</p>
+                            <p style="font-size: 12px;">Make sure you launched the app correctly from your EHR system or use the standalone launch page.</p>
                         </div>
                     </div>
                 `;
             });
+
+        // Update the EHR badge based on FHIR server URL
+        function updateEHRBadge() {
+            const badge = document.getElementById('ehr-badge');
+            const serverUrl = client.state.serverUrl || '';
+
+            if (serverUrl.includes('epic.com')) {
+                badge.textContent = 'Connected to Epic';
+            } else if (serverUrl.includes('cerner.com')) {
+                badge.textContent = 'Connected to Cerner';
+            } else if (serverUrl.includes('openemr')) {
+                badge.textContent = 'Connected to OpenEMR';
+            } else {
+                badge.textContent = 'Connected to FHIR Server';
+            }
+        }
 
         // Display logged-in user information
         function displayUserInfo() {
@@ -67,20 +290,27 @@
         // Load all patient data
         async function loadPatientData() {
             try {
+                // Get patient in context
                 const patient = await client.patient.read();
+                console.log("Patient:", patient);
+
+                // Build the UI
                 let html = buildPatientCard(patient);
                 html += buildTabsUI();
-
+                
                 document.getElementById('content').innerHTML = html;
-
+                
+                // Set up tab functionality
                 setupTabs();
-
+                
+                // Load data for each tab
                 loadConditions();
                 loadMedications();
                 loadAllergies();
                 loadObservations();
                 
             } catch (error) {
+                console.error("Error loading patient:", error);
                 document.getElementById('content').innerHTML = `
                     <div class="card">
                         <div class="error">
@@ -185,6 +415,7 @@
                     <button class="tab" data-tab="medications">Medications</button>
                     <button class="tab" data-tab="allergies">Allergies</button>
                     <button class="tab" data-tab="vitals">Vitals</button>
+                    <button class="tab" data-tab="debug">Debug Info</button>
                 </div>
                 
                 <div id="conditions" class="tab-content active">
@@ -226,6 +457,15 @@
                         </div>
                     </div>
                 </div>
+                
+                <div id="debug" class="tab-content">
+                    <div class="card">
+                        <h2>🔧 Debug Information</h2>
+                        <div class="debug-section" id="debug-info">
+                            Loading debug info...
+                        </div>
+                    </div>
+                </div>
             `;
         }
 
@@ -233,12 +473,18 @@
         function setupTabs() {
             document.querySelectorAll('.tab').forEach(tab => {
                 tab.addEventListener('click', function() {
+                    // Update active tab button
                     document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
                     this.classList.add('active');
+                    
+                    // Show corresponding content
                     document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
                     document.getElementById(this.dataset.tab).classList.add('active');
                 });
             });
+            
+            // Load debug info
+            loadDebugInfo();
         }
 
         // Load conditions
@@ -282,6 +528,7 @@
                 }).join('');
                 
             } catch (error) {
+                console.error("Error loading conditions:", error);
                 const errorMsg = error.message || 'Unknown error';
                 const statusCode = error.status || error.statusCode || '';
                 
@@ -335,6 +582,7 @@
                 }).join('');
                 
             } catch (error) {
+                console.error("Error loading medications:", error);
                 document.getElementById('medications-list').innerHTML = 
                     `<div class="error">Error loading medications: ${error.message}</div>`;
             }
@@ -376,6 +624,7 @@
                 }).join('');
                 
             } catch (error) {
+                console.error("Error loading allergies:", error);
                 document.getElementById('allergies-list').innerHTML = 
                     `<div class="error">Error loading allergies: ${error.message}</div>`;
             }
@@ -394,6 +643,8 @@
                         `Observation?patient=${patientId}&category=vital-signs&_count=20`
                     );
                 } catch (e) {
+                    // If category filter fails, try without it
+                    console.log("Trying observations without category filter...");
                     bundle = await client.request(
                         `Observation?patient=${patientId}&_count=20`
                     );
@@ -440,10 +691,30 @@
                 }).join('');
                 
             } catch (error) {
+                console.error("Error loading observations:", error);
                 const statusCode = error.status || error.statusCode || '';
                 container.innerHTML = 
                     `<div class="error">Error loading vitals: ${statusCode} ${error.message}</div>`;
             }
+        }
+
+        // Load debug information
+        function loadDebugInfo() {
+            const debugInfo = {
+                "FHIR Server URL": client.state.serverUrl,
+                "Patient ID": client.patient.id,
+                "Token Response": {
+                    "token_type": client.state.tokenResponse?.token_type,
+                    "scope": client.state.tokenResponse?.scope,
+                    "patient": client.state.tokenResponse?.patient,
+                    "encounter": client.state.tokenResponse?.encounter,
+                    "expires_in": client.state.tokenResponse?.expires_in
+                },
+                "Client ID": client.state.clientId
+            };
+            
+            document.getElementById('debug-info').textContent = 
+                JSON.stringify(debugInfo, null, 2);
         }
     </script>
 </body>
