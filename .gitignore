@@ -8,3 +8,13 @@ __pycache__/
 *.pyc
 *.pyo
 node_modules/
+
+# OS / editor
+.DS_Store
+
+# Data (MIMIC-IV — not redistributable; requires PhysioNet access)
+*.csv
+*.parquet
+*.arrow
+data/
+output/
