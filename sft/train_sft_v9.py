@@ -1,14 +1,11 @@
 #!/usr/bin/env python3
 """
-SFT v9 — Qwen3-32B on full MIMIC-IV radiology dataset (18,805 admissions).
-v9 changes vs v8:
-  - 10x more training data (18,805 vs 1,815 admissions)
-  - 1 epoch (sufficient with large dataset)
-  - CPT codes as labels, full MIMIC radiology reports
+Supervised fine-tuning of Qwen3-32B for radiology CPT-code prediction.
 
-Base model: qwen3-32b-mimic-cpt-merged (Base + CPT already merged)
-Trains a single SFT LoRA on top of the merged CPT model.
-Saves SFT adapter + full merged model.
+Trains a fresh SFT LoRA on top of the CPT-merged base model
+(qwen3-32b-mimic-cpt-merged) over the full MIMIC-IV radiology dataset
+(18,805 admissions), with CPT codes as labels. Saves the SFT adapter and
+the full merged model.
 
 Run:
     accelerate launch --num_processes 4 --mixed_precision bf16 train_sft_v9.py
