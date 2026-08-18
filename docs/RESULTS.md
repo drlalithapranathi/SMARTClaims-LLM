@@ -17,6 +17,8 @@ To verify each training stage actually moves the model toward the clinical-codin
 | + SFT (radiology CPT) | 1.48 |
 | + GRPO (F1 reward) | 1.49 |
 
+*Measured with `evaluation/eval_perplexity_stages.py` (response-token perplexity, first 50 test admissions) on 2026-04-22, before the final unk10 GRPO model was trained: the SFT and GRPO rows correspond to the SFT v9 / GRPO v3b checkpoints.*
+
 CPT alone reduces perplexity by ~59%; SFT reduces it by another ~72%. GRPO does not lower perplexity further — expected, since GRPO optimizes a task reward, not next-token likelihood — but the value remains essentially flat, indicating the policy update did not damage the language-modeling distribution learned in earlier stages.
 
 ## 4.3 Main Classification Results
