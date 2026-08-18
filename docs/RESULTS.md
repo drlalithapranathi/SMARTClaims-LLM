@@ -21,6 +21,26 @@ To verify each training stage actually moves the model toward the clinical-codin
 
 CPT alone reduces perplexity by ~59%; SFT reduces it by another ~72%. GRPO does not lower perplexity further — expected, since GRPO optimizes a task reward, not next-token likelihood — but the value remains essentially flat, indicating the policy update did not damage the language-modeling distribution learned in earlier stages.
 
+## 4.2.1 CPT-Stage Generation Quality (BLEU / ROUGE)
+
+Two supplementary checks of the continued-pretraining stage, run in March 2026 before the SFT/GRPO work (not included in the thesis). Both compare base Qwen3-32B against the CPT epoch-2 adapter on 100 held-out samples; scripts are in `old_experiments/cpt_eval/`.
+
+**Discharge-note continuation** (`eval_bleu_base.py` / `eval_bleu_ep2.py`): the model is given the first 50% of a held-out discharge note (≤512 prompt tokens) and generates up to 256 tokens; BLEU-4 against the true continuation.
+
+| Model | BLEU | BP | p1 | p2 | p3 | p4 |
+|---|---:|---:|---:|---:|---:|---:|
+| Qwen3-32B (base) | 2.27 | 0.96 | 16.70 | 3.28 | 1.47 | 0.39 |
+| + CPT (epoch 2) | 4.57 | 0.96 | 19.24 | 5.64 | 3.16 | 1.52 |
+
+**Radiology findings generation** (`bleu_rouge_radiology_base.py` / `bleu_rouge_radiology_cpt.py`): given the procedure name and clinical indication, generate the FINDINGS section (≤512 tokens); BLEU-4, ROUGE-F1, and per-sample perplexity against the reference report.
+
+| Model | BLEU | ROUGE-1 | ROUGE-2 | ROUGE-L | Perplexity |
+|---|---:|---:|---:|---:|---:|
+| Qwen3-32B (base) | 2.09 | 0.179 | 0.039 | 0.104 | 10.55 |
+| + CPT (epoch 2) | 3.62 | 0.171 | 0.054 | 0.111 | 4.72 |
+
+CPT roughly doubles BLEU on discharge continuation and lowers radiology-report perplexity by more than half; absolute BLEU/ROUGE remain low, as expected for free-text clinical generation, and these metrics were not pursued further once the task was framed as CPT-code prediction.
+
 ## 4.3 Main Classification Results
 
 Table 4.1 reports test-set F1 across the model lineage. Early models (v8 / v2) used a small 1.8k-example dataset and are included only as a baseline reference; the v9 line is trained on the full 21,155-example SFT dataset and 16,924-example GRPO dataset. The unk10 line introduces a 10% unknown-discharge augmentation during SFT.
