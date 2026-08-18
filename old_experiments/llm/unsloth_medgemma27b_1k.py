@@ -1,5 +1,4 @@
 import os
-os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
 from unsloth import FastLanguageModel, UnslothTrainer, UnslothTrainingArguments
 import torch
