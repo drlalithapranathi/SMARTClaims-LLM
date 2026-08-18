@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 """
-Perplexity evaluation of the base model and continued-pretraining (CPT)
-adapters on held-out discharge notes. Lower perplexity = better language modeling.
+Full-note perplexity of the base model and continued-pretraining (CPT)
+adapters on held-out discharge notes (a different protocol from
+eval_perplexity_stages.py, which is the source of the reported
+perplexity table). Lower perplexity = better language modeling.
 
 Run:
     python eval_perplexity_cpt.py
