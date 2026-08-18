@@ -66,7 +66,7 @@ Held-out test set: **4,702 admissions**, **264 distinct CPT codes** (MIMIC-IV, s
 | SFT, 10% unknown, 2 epochs | 0.556 | 0.549 | 0.235 |
 | **SFT 10% unknown + GRPO (final)** | **0.568** | **0.566** | 0.157 |
 
-Per-token perplexity by stage: base 13.00 → +CPT 5.36 → +SFT 1.48 → +GRPO 1.49. Top-20 most-frequent-code mean F1 for the final model: 0.634. On a mixed set of 450 radiology + 50 non-radiology discharge notes, the final model outputs `unknown` for 50/50 non-radiology notes. Full tables and per-code numbers are in [`docs/RESULTS.md`](docs/RESULTS.md).
+Per-token perplexity by stage: base 13.00 → +CPT 5.36 → +SFT 1.48 → +GRPO 1.49 (SFT/GRPO rows measured on the v9/v3b line; see `docs/RESULTS.md`). Top-20 most-frequent-code mean F1 for the final model: 0.634. On a mixed set of 450 radiology + 50 non-radiology discharge notes, the final model outputs `unknown` for 50/50 non-radiology notes. Full tables and per-code numbers are in [`docs/RESULTS.md`](docs/RESULTS.md).
 
 ## Repository layout
 
