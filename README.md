@@ -81,9 +81,10 @@ evaluation/             Test-set F1 (single-GPU and sharded), mixed radiology/un
                         perplexity by stage
 figures/                Scripts that render the results charts / poster / confusion matrix
 docs/                   RESULTS.md — full results write-up
-old_experiments/        Superseded runs kept for reference: small-data SFT v8 baseline,
-                        GRPO v3b on SFT v9, no-unknown ablation, GraphRAG/RadLex and
-                        MedGemma prototypes, early SMART app frontend
+old_experiments/        Superseded runs kept for reference: early exam-name SFT, SFT v5–v8,
+                        GRPO v3b on SFT v9, no-unknown ablation, CPT-stage BLEU/ROUGE eval,
+                        model-parallel CPT notebook, GraphRAG/RadLex and MedGemma
+                        prototypes, early SMART app frontend, v7/v9-era planning notes
 ```
 
 ## Reproducing the pipeline
