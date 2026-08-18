@@ -1,7 +1,13 @@
 #!/usr/bin/env python3
 """
-Perplexity comparison on the test set across fine-tuning stages (SFT → GRPO).
-Computes perplexity on response tokens only (the CPT-code string).
+Perplexity comparison on the test set across training stages
+(base → CPT → SFT → GRPO). Computes perplexity on response tokens only
+(the CPT-code string), on the first N_SAMPLES test admissions.
+
+This is the protocol behind the perplexity table in docs/RESULTS.md
+(13.00 / 5.36 / 1.48 / 1.49). Those reported values were measured on the
+SFT v9 / GRPO v3b checkpoints; MODELS below points at the final unk10
+pipeline — swap paths to reproduce the reported run.
 
 Run:
     python eval_perplexity_stages.py
@@ -21,12 +27,14 @@ TOKENIZER_SRC    = "../qwen3-32b-mimic-cpt-200k-ep2"
 TEST_INPUTS_CSV  = "../sft_test_inputs.csv"
 TEST_LABELS_CSV  = "../sft_test_labels.csv"
 N_SAMPLES        = 50           # cap for speed; set to None for all 4702
-OUT_JSON         = "perplexity_stages_50samples.json"
+OUT_JSON         = "perplexity_test_results.json"
 
 # (label, base model, optional adapter)
 MODELS = [
-    ("SFT",  "unk10_sft_merged", None),
-    ("GRPO", "unk10_sft_merged", "unk10_grpo_adapter"),
+    ("Base", "Qwen/Qwen3-32B",                None),
+    ("CPT",  "../qwen3-32b-mimic-cpt-merged", None),
+    ("SFT",  "unk10_sft_merged",              None),
+    ("GRPO", "unk10_sft_merged",              "unk10_grpo_adapter"),
 ]
 
 SYSTEM_PROMPT = (
