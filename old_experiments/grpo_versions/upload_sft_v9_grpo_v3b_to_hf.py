@@ -7,7 +7,7 @@ Upload SmartClaims models to HuggingFace Hub.
 
 Usage:
     huggingface-cli login   # once, to store your token
-    python upload_to_hf.py
+    python upload_sft_v9_grpo_v3b_to_hf.py
 """
 
 import os
