@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
 """
-Build a held-out test set of 300 radiology SFT examples.
+Build a held-out test set of N_TEST radiology SFT examples.
 
 Uses the same pipeline as the SFT notebook but excludes the 1200
 samples already used for train/val (random_state=42).
 
-Run on plhi (where MIMIC data lives):
+Run on the machine that holds the MIMIC-IV note files:
     python make_test_set.py
 
 Output:
-    mimic_radiology_sft_test.jsonl  (300 examples)
+    mimic_radiology_sft_test.jsonl  (N_TEST examples)
 """
 
 import json
@@ -77,7 +77,7 @@ used_hadm_ids = set(used['hadm_id'].tolist())
 remaining = labels_filtered[~labels_filtered['hadm_id'].isin(used_hadm_ids)].reset_index(drop=True)
 print(f'Remaining (unseen) admissions: {len(remaining):,}')
 
-# ── Sample 300 test examples ──────────────────────────────────────────────────
+# ── Sample N_TEST test examples ───────────────────────────────────────────────
 test = remaining.sample(n=min(N_TEST, len(remaining)), random_state=SEED).reset_index(drop=True)
 print(f'Test set size: {len(test)}')
 
