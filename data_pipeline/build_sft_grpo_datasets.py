@@ -15,7 +15,7 @@ import os
 import pandas as pd
 from datasets import Dataset
 
-BASE_DIR = os.environ.get("DATA_DIR", ".")
+BASE_DIR = os.environ.get("DATA_DIR", "..")
 TRAIN_CSV = os.path.join(BASE_DIR, "sft_train.csv")
 DISCHARGE_CSV = os.path.join(BASE_DIR, "cleaned_discharge_notes_200k_fixed.csv")
 
