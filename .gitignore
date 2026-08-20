@@ -16,5 +16,9 @@ node_modules/
 *.csv
 *.parquet
 *.arrow
+*.jsonl
+*_predictions.json
+eval_*_results_*.json
+*.docx
 data/
 output/
