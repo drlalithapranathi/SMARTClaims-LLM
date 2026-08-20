@@ -17,11 +17,26 @@ node_modules/
 *.parquet
 *.arrow
 *.jsonl
-*_predictions.json
-eval_*_results_*.json
+*.pkl
+*.npy
 *.docx
+*.xlsx
+*.ipynb
+*_predictions.json
+eval_*results*.json
+perplexity_*results*.json
+training_info.json
+eval_sft_summary_*.txt
 data/
 output/
+
+# Model checkpoints and tokenized datasets
+*_dataset/
+*-merged/
+*_adapter/
+checkpoint-*/
+unk10_*/
+tokenized_chunks_*/
 
 # Demo seeding artifacts (derived from MIMIC-IV)
 mapping.json
