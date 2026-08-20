@@ -1,5 +1,8 @@
 # SmartClaims Model Registry
 
+> Historical snapshot from the v9/v3b era — some rows were mid-evaluation when written.
+> Final numbers are in [docs/RESULTS.md](../../docs/RESULTS.md) (GRPO v3b full test set: F1-samples 0.4647).
+
 ## Pipeline: CPT Pretraining → SFT → GRPO
 
 ---
@@ -64,12 +67,12 @@
 ## Eval Script Usage
 
 ```bash
-# SFT eval (500 samples, GPU 7)
-python eval_sft_grpo.py --mode sft --n-eval 500
+# SFT eval (500 samples)
+python eval_sft_grpo_v9.py --mode sft --n-eval 500
 
-# GRPO eval (full test set, GPU 7)
-python eval_sft_grpo.py --mode grpo
+# GRPO eval (full test set)
+python eval_sft_grpo_v9.py --mode grpo
 
-# To eval checkpoint-150 fallback: change in eval_sft_grpo.py:
+# To eval checkpoint-150 fallback: change in eval_sft_grpo_v9.py:
 # GRPO_ADAPTER = "grpo_v3_out/checkpoint-150"
 ```
