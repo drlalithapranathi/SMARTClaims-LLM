@@ -80,6 +80,6 @@ else:
     elapsed = time.time() - t0
     print(f"\n✓ Saved {len(dataset):,} chunks → {OUTPUT_DIR}/")
     print(f"  Time: {elapsed/60:.1f} min")
-    print(f"  Estimated training steps @ eff-batch 96 (8×4×3 GPUs): {len(dataset)//96:,}")
+    print(f"  Estimated training steps @ eff-batch 64 (4×4×4 GPUs): {len(dataset)//64:,}")
     print(f"\nNext step:")
-    print(f"  accelerate launch --num_processes 3 --mixed_precision bf16 train_cpt.py")
+    print(f"  accelerate launch --num_processes 4 --mixed_precision bf16 train_cpt.py")
