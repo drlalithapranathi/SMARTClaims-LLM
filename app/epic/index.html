@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SMARTClaims · Loading...</title>
+    <script src="https://cdn.jsdelivr.net/npm/fhirclient/build/fhir-client.js"></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, "SF Pro Text", "Segoe UI", system-ui, sans-serif;
+            background: #f1f5f9;
+            color: #0f172a;
+            font-size: 14px;
+            line-height: 1.5;
+            min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
+        }
+        .topbar {
+            background: #faf5ff;
+            padding: 22px 36px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .tb-left { display: flex; align-items: center; gap: 14px; }
+        .tb-mark {
+            width: 44px; height: 44px;
+            color: #fef7ed;
+            background: #4c1d95;
+            border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .tb-name { font-size: 22px; font-weight: 700; letter-spacing: -0.01em; line-height: 1.2; color: #0f172a; }
+        .tb-sub { font-size: 13px; color: #475569; margin-top: 2px; }
+        .tb-right { display: flex; gap: 28px; align-items: center; }
+        .tb-pt { display: flex; flex-direction: column; gap: 2px; align-items: flex-end; }
+        .tb-key { font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #64748b; }
+        .tb-val { font-size: 15.5px; font-weight: 700; color: #0f172a; font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
+        .epic-badge {
+            background: #1e3a8a;
+            color: #fff;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.04em;
+        }
+        .pill-bar {
+            background: #fff;
+            padding: 18px 36px;
+            display: flex;
+            gap: 10px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .pill {
+            padding: 11px 22px;
+            font-size: 13.5px;
+            font-weight: 600;
+            color: #475569;
+            background: #faf5ff;
+            border: 1px solid #e2e8f0;
+            border-radius: 999px;
+            cursor: pointer;
+            font-family: inherit;
+            letter-spacing: -0.01em;
+        }
+        .pill.active { background: #1e3a8a; color: #fff; border-color: #1c4960; }
+        .pill:disabled { opacity: 0.5; cursor: not-allowed; }
+        .shell { padding: 20px 28px 40px; max-width: 1600px; margin: 0 auto; }
+        .section {
+            background: #fff;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            margin-bottom: 18px;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+        }
+        .sec-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 18px 24px;
+            border-bottom: 1px solid #e2e8f0;
+            background: #fff;
+        }
+        .sec-title { font-size: 19px; font-weight: 700; color: #0f172a; letter-spacing: -0.02em; }
+        .sec-meta { font-size: 12.5px; color: #64748b; margin-top: 3px; }
+        .analyze-btn {
+            background: #1e3a8a;
+            color: #fff;
+            border: none;
+            padding: 11px 22px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            font-family: inherit;
+        }
+        .analyze-btn:hover:not(:disabled) { background: #3b1377; }
+        .analyze-btn:disabled { opacity: 0.7; cursor: not-allowed; }
+        .status-pill {
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            padding: 5px 12px;
+            border-radius: 999px;
+            background: #fef3c7;
+            color: #92400e;
+        }
+        .status-pill.running { background: #dbeafe; color: #1e40af; }
+        .status-pill.success { background: #d1fae5; color: #065f46; }
+        .status-pill.error { background: #fee2e2; color: #991b1b; }
+        .pane {
+            display: grid;
+            grid-template-columns: 440px 1fr;
+            min-height: 540px;
+        }
+        .pane-left {
+            padding: 22px;
+            background: #f8fafc;
+            border-right: 1px solid #e2e8f0;
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+            overflow-y: auto;
+            max-height: 720px;
+        }
+        .pane-right {
+            padding: 22px 28px;
+            background: #fff;
+            display: flex;
+            flex-direction: column;
+            min-height: 540px;
+            max-height: 720px;
+        }
+        .block-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: #0f172a;
+            margin-bottom: 14px;
+            letter-spacing: -0.01em;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .block-dot {
+            width: 9px; height: 9px;
+            background: #7c3aed;
+            border-radius: 50%;
+        }
+        .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+        .chip {
+            font-family: "SF Mono", Menlo, monospace;
+            font-size: 16px;
+            font-weight: 700;
+            padding: 11px 18px;
+            border-radius: 7px;
+            background: #1e3a8a;
+            color: #fff;
+            letter-spacing: 0.02em;
+            border: 2px solid #1c4960;
+        }
+        .chip.pending {
+            background: #fff;
+            color: #cbd5e1;
+            border: 2px dashed #cbd5e1;
+            font-weight: 600;
+        }
+        .chip.gt { background: #fff; color: #334155; border: 2px solid #cbd5e1; }
+        .chip.gt.correct { background: #d1fae5; color: #065f46; border-color: #10b981; }
+        .chip.gt.missed { background: #fef2f2; color: #991b1b; border: 2px dashed #ef4444; }
+        .chip.correct { background: #059669; color: #fff; border-color: #059669; }
+        .chip.extra { background: #fef3c7; color: #92400e; border-color: #fde68a; }
+        .raw-line { font-size: 12px; color: #64748b; margin-top: 12px; word-break: break-word; }
+        .raw-line code {
+            background: #fff;
+            border: 1px solid #e2e8f0;
+            padding: 4px 9px;
+            border-radius: 4px;
+            font-size: 11.5px;
+            color: #334155;
+            font-family: "SF Mono", Menlo, monospace;
+        }
+        .raw-output.empty { color: #94a3b8; font-style: italic; }
+        .metrics { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .metric {
+            background: #fff;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            padding: 9px 8px;
+            text-align: center;
+        }
+        .metric-val {
+            font-size: 17px;
+            font-weight: 800;
+            color: #0f172a;
+            font-variant-numeric: tabular-nums;
+            letter-spacing: -0.02em;
+            line-height: 1.1;
+        }
+        .metric-val.empty { color: #cbd5e1; }
+        .metric-key {
+            font-size: 9.5px;
+            color: #64748b;
+            font-weight: 600;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            margin-top: 4px;
+        }
+        .legend { display: flex; gap: 14px; margin-top: 12px; font-size: 11.5px; color: #64748b; flex-wrap: wrap; align-items: center; }
+        .legend .chip { font-size: 11px; padding: 4px 10px; }
+        .doc-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            padding-bottom: 14px;
+            margin-bottom: 14px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .doc-label { font-size: 14px; font-weight: 700; color: #0f172a; }
+        .doc-meta { font-size: 12px; color: #94a3b8; font-variant-numeric: tabular-nums; }
+        .doc-content {
+            flex: 1;
+            overflow-y: auto;
+            font-family: "SF Mono", Menlo, monospace;
+            font-size: 12.5px;
+            line-height: 1.7;
+            white-space: pre-wrap;
+            color: #1e293b;
+            padding: 18px 20px;
+            background: #fafbfc;
+            border: 1px solid #e2e8f0;
+            border-radius: 7px;
+        }
+        .spinner {
+            display: inline-block;
+            width: 14px; height: 14px;
+            border: 2px solid rgba(255,255,255,0.4);
+            border-top-color: #fff;
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+            vertical-align: middle;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .banner {
+            display: flex; align-items: center; gap: 10px;
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            color: #1e40af;
+            padding: 11px 14px;
+            border-radius: 7px;
+            font-size: 13px;
+            margin-bottom: 12px;
+        }
+        .banner .spinner { border-color: rgba(30,64,175,0.25); border-top-color: #1e40af; }
+        .banner.error { background: #fef2f2; border-color: #fecaca; color: #991b1b; }
+        .full-loader {
+            position: fixed;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            font-size: 16px;
+            text-align: center;
+        }
+        .full-loader .spinner {
+            border-color: rgba(255,255,255,0.3);
+            border-top-color: white;
+            width: 50px;
+            height: 50px;
+            border-width: 4px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+<div id="loader" class="full-loader">
+    <div>
+        <div class="spinner"></div>
+        <div>Loading patient data from Epic...</div>
+    </div>
+</div>
+<div id="app" style="display:none;"></div>
+
+<script>
+    // ============================================================
+    // CONFIG
+    // ============================================================
+    // Endpoint of the deployed Modal app (app/epic/modal_inference.py):
+    //   modal deploy modal_inference.py   ->  https://<workspace>--smartclaims-cpt-predictor-epic-cptpredictor-predict.modal.run
+    const MODAL_ENDPOINT = "https://YOUR-WORKSPACE--smartclaims-cpt-predictor-epic-cptpredictor-predict.modal.run";
+
+    // Built-in sample radiology report. The Epic sandbox does not expose
+    // radiology Binary content, so the demo codes a fixed report. The text below
+    // is synthetic (written for this demo, not taken from any dataset); the
+    // model call and SMART integration are real.
+    const SAMPLE_REPORT = {
+        id: "DEMO_001",
+        title: "CT Head without Contrast; CTA Head and Neck",
+        date: "2026-04-15",
+        ground_truth: ["70450", "70496", "70498"],
+        text: `Report 1:
+EXAMINATION: CT HEAD WITHOUT CONTRAST
+
+INDICATION: 64-year-old with acute onset right-sided weakness and slurred
+speech, last known well 2 hours prior. Evaluate for hemorrhage or infarct.
+
+TECHNIQUE: Contiguous axial images of the head were obtained without
+intravenous contrast. Coronal and sagittal reformats were generated.
+
+COMPARISON: None available.
+
+FINDINGS: There is no intracranial hemorrhage, mass effect, or midline shift.
+Subtle loss of gray-white differentiation in the left insular cortex is
+noted. The ventricles and sulci are within normal limits for age. Basal
+cisterns are patent. No extra-axial collection. Calvarium is intact.
+Visualized paranasal sinuses and mastoid air cells are clear.
+
+IMPRESSION:
+1. No intracranial hemorrhage.
+2. Subtle loss of gray-white differentiation in the left insular cortex,
+   concerning for early ischemic change. CTA head and neck recommended.
+
+---
+
+Report 2:
+EXAMINATION: CT ANGIOGRAPHY OF THE HEAD AND NECK WITH CONTRAST
+
+INDICATION: Suspected acute left MCA territory ischemia. Evaluate for
+large-vessel occlusion and cervical carotid disease.
+
+TECHNIQUE: Following administration of 75 mL of intravenous iodinated
+contrast, helical CT angiographic images were acquired from the aortic arch
+through the vertex. Multiplanar and 3D reformats were reviewed.
+
+FINDINGS:
+NECK: The aortic arch is of normal caliber with a standard three-vessel
+branching pattern. Both common carotid arteries are patent. Mild calcified
+plaque at the left carotid bifurcation without hemodynamically significant
+stenosis. The right internal carotid artery is widely patent. Bilateral
+vertebral arteries are patent to the basilar confluence, left dominant.
+
+HEAD: Abrupt occlusion of the proximal M1 segment of the left middle
+cerebral artery with absent opacification of the distal M1 and M2 branches.
+Collateral flow to the left MCA territory is fair via leptomeningeal
+vessels. The anterior cerebral arteries, right MCA, posterior cerebral
+arteries, and basilar artery are patent. No aneurysm identified.
+
+IMPRESSION:
+1. Occlusion of the proximal left M1 segment with fair collaterals.
+2. Mild calcified plaque at the left carotid bifurcation, less than 50
+   percent stenosis. No other significant cervical stenosis.
+3. No intracranial aneurysm or hemorrhage.`
+    };
+
+    // ============================================================
+    // SMART ON FHIR INIT
+    // ============================================================
+    let client = null;
+    let patientData = null;
+
+    FHIR.oauth2.ready()
+        .then(function(smartClient) {
+            client = smartClient;
+            return client.patient.read();
+        })
+        .then(function(patient) {
+            patientData = patient;
+            renderApp(patient);
+        })
+        .catch(function(error) {
+            console.error("SMART init error:", error);
+            document.getElementById('loader').innerHTML = `
+                    <div>
+                        <h2>❌ Connection Failed</h2>
+                        <p>${error.message || 'Failed to connect to Epic'}</p>
+                    </div>
+                `;
+        });
+
+    // ============================================================
+    // RENDER
+    // ============================================================
+    function renderApp(patient) {
+        const name = patient.name?.[0];
+        const fullName = name
+            ? `${(name.given || []).join(' ')} ${name.family || ''}`.trim()
+            : 'Unknown';
+        const gender = (patient.gender || '').toLowerCase();
+        const sexShort = gender.startsWith('m') ? 'M' : (gender.startsWith('f') ? 'F' : '—');
+        const dob = patient.birthDate || '—';
+        let age = '—';
+        if (patient.birthDate) {
+            const birth = new Date(patient.birthDate);
+            age = String(Math.floor((Date.now() - birth) / (365.25 * 24 * 60 * 60 * 1000)));
+        }
+        const mrn = (patient.id || '').substring(0, 10) || '—';
+
+        document.title = `SMARTClaims · ${fullName}`;
+
+        document.getElementById('app').innerHTML = `
+                <div class="topbar">
+                    <div class="tb-left">
+                        <div class="tb-mark">
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M14 2H6C4.9 2 4 2.9 4 4V20C4 21.1 4.9 22 6 22H18C19.1 22 20 21.1 20 20V8L14 2Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+                                <path d="M14 2V8H20" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+                                <path d="M12 12V18M9 15H15" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <div class="tb-name">SMARTClaims</div>
+                            <div class="tb-sub">Clinical Decision Support · Radiology · <span class="epic-badge">Epic Sandbox</span></div>
+                        </div>
+                    </div>
+                    <div class="tb-right">
+                        <div class="tb-pt"><span class="tb-key">Name</span><span class="tb-val">${fullName}</span></div>
+                        <div class="tb-pt"><span class="tb-key">Sex</span><span class="tb-val">${sexShort}</span></div>
+                        <div class="tb-pt"><span class="tb-key">Age</span><span class="tb-val">${age}</span></div>
+                        <div class="tb-pt"><span class="tb-key">MRN</span><span class="tb-val">${mrn}</span></div>
+                    </div>
+                </div>
+                <div class="pill-bar">
+                    <button class="pill active">Radiology Reports</button>
+                    <button class="pill" disabled>Encounters</button>
+                    <button class="pill" disabled>Conditions</button>
+                    <button class="pill" disabled>Procedures</button>
+                    <button class="pill" disabled>Lab Results</button>
+                </div>
+                <div class="shell">
+                    ${renderReportSection()}
+                </div>
+            `;
+
+        document.getElementById('loader').style.display = 'none';
+        document.getElementById('app').style.display = 'block';
+    }
+
+    function renderReportSection() {
+        const gtChips = SAMPLE_REPORT.ground_truth
+            .map(c => `<span class="chip gt" data-gt-code="${c}">${c}</span>`)
+            .join('');
+
+        return `
+                <div class="section wrap">
+                    <div class="sec-head">
+                        <div>
+                            <div class="sec-title">Radiology Report</div>
+                            <div class="sec-meta">${SAMPLE_REPORT.date} · Order #${SAMPLE_REPORT.id}</div>
+                        </div>
+                        <div style="display:flex;gap:14px;align-items:center">
+                            <span class="status-pill" data-status-pill>Awaiting</span>
+                            <button class="analyze-btn" onclick="analyze(this)">Analyze with AI →</button>
+                        </div>
+                    </div>
+                    <div class="pane">
+                        <aside class="pane-left">
+                            <div class="status-area"></div>
+
+                            <div>
+                                <div class="block-title"><span class="block-dot"></span>Predicted CPT Codes</div>
+                                <div class="chips" data-codes-row="predicted">
+                                    <span class="chip pending">— — —</span>
+                                    <span class="chip pending">— — —</span>
+                                    <span class="chip pending">— — —</span>
+                                </div>
+                                <div class="raw-line">Output: <code class="raw-output empty" data-raw-output>awaiting</code></div>
+                            </div>
+
+                            <div>
+                                <div class="block-title"><span class="block-dot"></span>Performance</div>
+                                <div class="metrics">
+                                    <div class="metric"><div class="metric-val empty" data-metric="precision">—</div><div class="metric-key">Precision</div></div>
+                                    <div class="metric"><div class="metric-val empty" data-metric="recall">—</div><div class="metric-key">Recall</div></div>
+                                    <div class="metric"><div class="metric-val empty" data-metric="f1">—</div><div class="metric-key">F1 Score</div></div>
+                                    <div class="metric"><div class="metric-val empty" data-metric="correct">—</div><div class="metric-key">Match</div></div>
+                                </div>
+                            </div>
+
+                            <div>
+                                <div class="block-title"><span class="block-dot"></span>Billed Codes <span style="color:#94a3b8;font-weight:500;font-size:11.5px;margin-left:4px">ground truth</span></div>
+                                <div class="chips" data-gt-row>${gtChips}</div>
+                                <div class="legend">
+                                    <span class="chip gt correct">✓</span><span>matches AI</span>
+                                    <span class="chip gt missed">✗</span><span>missed</span>
+                                </div>
+                            </div>
+                        </aside>
+
+                        <main class="pane-right">
+                            <div class="doc-head">
+                                <span class="doc-label">${SAMPLE_REPORT.title}</span>
+                                <span class="doc-meta">${SAMPLE_REPORT.date}</span>
+                            </div>
+                            <div class="doc-content" data-report-content>${SAMPLE_REPORT.text}</div>
+                        </main>
+                    </div>
+                </div>
+            `;
+    }
+
+    // ============================================================
+    // ANALYZE — calls Modal endpoint
+    // ============================================================
+    async function analyze(btn) {
+        const card = btn.closest('.wrap');
+        const statusArea = card.querySelector('.status-area');
+        const statusPill = card.querySelector('[data-status-pill]');
+
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner"></span> Analyzing...';
+        statusPill.className = 'status-pill running';
+        statusPill.textContent = 'Running';
+        statusArea.innerHTML = `<div class="banner"><span class="spinner"></span>
+                <div>Running inference on Qwen3-32B GRPO via Modal GPU...</div></div>`;
+
+        try {
+            const t0 = Date.now();
+            const resp = await fetch(MODAL_ENDPOINT, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ report_text: SAMPLE_REPORT.text.substring(0, 3000) }),
+            });
+            if (!resp.ok) throw new Error(`Modal returned ${resp.status}`);
+            const data = await resp.json();
+            const elapsed = Date.now() - t0;
+
+            const predictedCodes = data.codes || [];
+            const rawOutput = data.raw || '';
+            const gtCodes = SAMPLE_REPORT.ground_truth;
+
+            // Update predicted chips
+            const pRow = card.querySelector('[data-codes-row="predicted"]');
+            pRow.innerHTML = '';
+            if (predictedCodes.length === 0) {
+                pRow.innerHTML = '<span class="chip pending">no codes</span>';
+            } else {
+                predictedCodes.forEach(code => {
+                    const chip = document.createElement('span');
+                    chip.className = 'chip ' + (gtCodes.includes(code) ? 'correct' : 'extra');
+                    chip.textContent = code;
+                    pRow.appendChild(chip);
+                });
+            }
+
+            // Update GT chips with match indicators
+            card.querySelectorAll('[data-gt-code]').forEach(chip => {
+                chip.classList.remove('correct', 'missed');
+                chip.classList.add(predictedCodes.includes(chip.dataset.gtCode) ? 'correct' : 'missed');
+            });
+
+            // Raw output
+            const raw = card.querySelector('[data-raw-output]');
+            raw.classList.remove('empty');
+            raw.textContent = rawOutput || '(empty)';
+
+            // Metrics
+            const gtSet = new Set(gtCodes);
+            const predSet = new Set(predictedCodes);
+            const tp = [...gtSet].filter(c => predSet.has(c)).length;
+            const precision = predSet.size ? tp / predSet.size : 0;
+            const recall = gtSet.size ? tp / gtSet.size : 0;
+            const f1 = (precision + recall) ? 2 * precision * recall / (precision + recall) : 0;
+
+            const setMetric = (key, val) => {
+                const el = card.querySelector(`[data-metric="${key}"]`);
+                el.textContent = val;
+                el.classList.remove('empty');
+            };
+            setMetric('precision', precision.toFixed(3));
+            setMetric('recall', recall.toFixed(3));
+            setMetric('f1', f1.toFixed(3));
+            setMetric('correct', `${tp}/${gtSet.size}`);
+
+            statusArea.innerHTML = `<div class="banner" style="background:#f0fdf4;border-color:#86efac;color:#065f46;">
+                    ✓ Inference complete · ${elapsed}ms · Modal GPU (H100)</div>`;
+            statusPill.className = 'status-pill success';
+            statusPill.textContent = '✓ Analyzed';
+            btn.innerHTML = 'Re-analyze ↻';
+            btn.disabled = false;
+
+        } catch (err) {
+            console.error(err);
+            statusArea.innerHTML = `<div class="banner error">⚠️ ${err.message}</div>`;
+            statusPill.className = 'status-pill error';
+            statusPill.textContent = 'Error';
+            btn.disabled = false;
+            btn.innerHTML = 'Retry →';
+        }
+    }
+</script>
+</body>
+</html>
