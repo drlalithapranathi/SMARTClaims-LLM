@@ -3,7 +3,7 @@
 Experiment: 10% unknowns, 2 epochs SFT
 Base model: qwen3-32b-mimic-cpt-merged (CPT already merged in)
 
-Run from exp_unk10_ep2/:
+Run from sft/ (model checkpoints one level up):
     accelerate launch --num_processes 3 --mixed_precision bf16 train_sft.py
 """
 
@@ -23,7 +23,7 @@ from trl import SFTTrainer, SFTConfig
 # ============================================================
 # CONFIG
 # ============================================================
-BASE_DIR        = "../../.."
+BASE_DIR        = ".."
 BASE_MODEL      = f"{BASE_DIR}/qwen3-32b-mimic-cpt-merged"
 TOKENIZER_SRC   = f"{BASE_DIR}/qwen3-32b-mimic-cpt-200k-ep2"
 SFT_TRAIN_DATA  = "unk10_sft_train"
@@ -230,6 +230,6 @@ if accelerator.is_main_process:
 
     print("\n" + "="*60)
     print("  SFT COMPLETE (10% unknowns, 2 epochs)")
-    print(f"  Adapter : exp_unk10_ep2/{SAVE_ADAPTER}/")
-    print(f"  Merged  : exp_unk10_ep2/{SAVE_FULL_MODEL}/")
+    print(f"  Adapter : {SAVE_ADAPTER}/")
+    print(f"  Merged  : {SAVE_FULL_MODEL}/")
     print("="*60)
