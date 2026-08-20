@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Merge unk10 SFT adapter into full model.
-Output: exp_unk10_ep2/unk10_sft_merged/
+Output: unk10_sft_merged/
 
 Run:
     python merge_unk10.py
