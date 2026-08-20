@@ -3,7 +3,7 @@
 Continued Pretraining of Qwen3-32B on MIMIC-IV discharge summaries.
 TRUE DATA PARALLELISM across 4x A6000 GPUs via DDP.
 
-batch=2 per GPU keeps peak VRAM ~28-30 GB (fits in 47 GB).
+batch=4 per GPU keeps peak VRAM within 47 GB.
 With 4 GPUs working simultaneously, wall-clock ≈ 50-70 hours.
 
 Run:
@@ -39,7 +39,7 @@ OUTPUT_DIR      = "outputs_cpt_qwen3_32b"
 SAVE_MODEL_NAME = "qwen3-32b-mimic-cpt-200k"
 
 BATCH_SIZE      = 4    # per GPU — logit tensor (4×2048×151k fp32) ≈ 5 GB, fits fine
-GRAD_ACCUM      = 4    # eff batch = 4 × 4 × 5 GPUs = 80
+GRAD_ACCUM      = 4    # eff batch = 4 × 4 × 4 GPUs = 64
 LEARNING_RATE   = 5e-5
 LORA_RANK       = 16
 WANDB_PROJECT   = "SmartClaims-CPT"
