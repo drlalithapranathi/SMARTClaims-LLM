@@ -27,7 +27,7 @@ Modal serverless GPU inference   (Qwen3-32B, weights on Hugging Face)
 SMART-on-FHIR app  →  clinician reviews: accept / edit / reject
 ```
 
-- **SMART-on-FHIR app** — launches from inside the EHR via the SMART App Launch / OAuth 2.0 flow, pulls the patient's radiology reports as FHIR `DiagnosticReport` resources, and renders the predicted codes for review. Launch verified against OpenEMR, the Epic on FHIR sandbox, and the Oracle Health (Cerner) sandbox.
+- **SMART-on-FHIR app** ([`app/`](app/)) — launches from inside the EHR via the SMART App Launch / OAuth 2.0 flow, pulls the patient's radiology reports as FHIR `DiagnosticReport` resources, and renders the predicted codes for review. Launch verified against OpenEMR, the Epic on FHIR sandbox, and the Oracle Health (Cerner) sandbox.
 - **Serverless inference** — weights hosted on Hugging Face, GPUs provisioned on demand on Modal: pay-per-inference, no always-on infrastructure.
 - **Human-in-the-loop** — codes are surfaced as recommendations for a qualified coder to accept, edit, or reject — never applied automatically.
 
@@ -71,6 +71,8 @@ Per-token perplexity by stage: base 13.00 → +CPT 5.36 → +SFT 1.48 → +GRPO 
 ## Repository layout
 
 ```
+app/                    SMART-on-FHIR app — OpenEMR version (FastAPI, EHR launch, PKCE),
+                        Epic-sandbox version (static HTML + fhirclient), Modal serving scripts
 data_pipeline/          MIMIC-IV preprocessing: radiology-section removal, VSAC/UMLS
                         CPT validation + train/test split, SFT/GRPO dataset builders,
                         holdout note sampler
