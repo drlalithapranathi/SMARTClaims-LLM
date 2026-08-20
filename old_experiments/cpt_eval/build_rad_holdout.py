@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Build radiology_holdout.jsonl from:
-  - mimic_radiology_sft_test__1_.jsonl   (full report text per admission)
+  - mimic_radiology_sft_test.jsonl       (full report text per admission)
   - mimic_radiology_sft_test_labels.jsonl (pipe-separated procedure names)
 
 Output: radiology_holdout.jsonl
