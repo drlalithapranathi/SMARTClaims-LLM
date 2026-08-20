@@ -2,7 +2,7 @@
 """
 Step 0: Merge Qwen3-32B base + CPT adapter → qwen3-32b-mimic-cpt-merged/
 
-This creates the base for SFT v8. Run this ONCE before train_sft_v8.py.
+This creates the merged base for SFT. Run this ONCE before sft/train_sft.py.
 
 Run:
     python merge_cpt.py
@@ -41,4 +41,4 @@ tokenizer = AutoTokenizer.from_pretrained(CPT_ADAPTER, trust_remote_code=True)
 tokenizer.save_pretrained(SAVE_TO)
 
 print(f"\n✓ CPT-merged model saved → {SAVE_TO}/")
-print("Next: accelerate launch --num_processes 4 --mixed_precision bf16 train_sft_v8.py")
+print("Next: accelerate launch --num_processes 3 --mixed_precision bf16 train_sft.py  (from sft/)")
