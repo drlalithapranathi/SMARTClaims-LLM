@@ -22,3 +22,7 @@ eval_*_results_*.json
 *.docx
 data/
 output/
+
+# Demo seeding artifacts (derived from MIMIC-IV)
+mapping.json
+demo_reports.json
