@@ -10,6 +10,8 @@ Manual coding is slow and error-prone (~1 in 5 claims is processed incorrectly),
 
 ## Architecture
 
+![SMARTClaims end-to-end workflow: MIMIC-IV data preparation, three-stage Qwen3-32B training, Modal serverless deployment, and the SMART-on-FHIR clinical interface](docs/images/smartclaims_architecture.png)
+
 At inference time, the app lives inside the clinician's EHR and never moves patient data outside the FHIR exchange:
 
 ```
