@@ -20,6 +20,7 @@ node_modules/
 *.pkl
 *.npy
 *.docx
+txt.txt
 *.xlsx
 *.ipynb
 *_predictions.json
