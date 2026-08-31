@@ -29,9 +29,15 @@ Modal serverless GPU inference   (Qwen3-32B, weights on Hugging Face)
 SMART-on-FHIR app  →  clinician reviews: accept / edit / reject
 ```
 
-- **SMART-on-FHIR app** ([`openemr_smart-on-fhir/`](openemr_smart-on-fhir/), [`epic_smart-on-fhir/`](epic_smart-on-fhir/)) — launches from inside the EHR via the SMART App Launch / OAuth 2.0 flow, pulls the patient's radiology reports as FHIR `DiagnosticReport` resources, and renders the predicted codes for review. Launch verified against OpenEMR, the Epic on FHIR sandbox, and the Oracle Health (Cerner) sandbox.
-- **Serverless inference** — weights hosted on Hugging Face, GPUs provisioned on demand on Modal: pay-per-inference, no always-on infrastructure.
-- **Human-in-the-loop** — codes are surfaced as recommendations for a qualified coder to accept, edit, or reject — never applied automatically.
+### A human-in-the-loop design
+
+![SMARTClaims running inside the EHR: predicted CPT codes, precision/recall/F1 against the billed codes, and the source radiology report side by side](docs/images/smartclaims_app_ui.png)
+
+Predictions are recommendations, never autonomous billing decisions. The coder sees the model's codes beside the codes billed for that admission — matches in green, misses in red — with the source report alongside, and accepts, edits, or rejects each one. At F1-samples 0.568 the value is in verifying a pre-populated list rather than coding from scratch.
+
+- **FHIR data access** ([`openemr_smart-on-fhir/`](openemr_smart-on-fhir/), [`epic_smart-on-fhir/`](epic_smart-on-fhir/)) — SMART App Launch with OAuth 2.0 and patient-scoped authorization, `Patient` and `Encounter` as context. The app then queries the FHIR server for the patient's radiology reports as `DiagnosticReport` resources. Plain FHIR R4, so the same build launches with no vendor-specific code — verified against OpenEMR, the Epic on FHIR sandbox, and the Oracle Health (Cerner) sandbox.
+- **Inference** — the admission's reports are concatenated into the trained system prompt and posted to a serverless Modal endpoint, which provisions an H100 on demand, loads the merged bfloat16 weights from Hugging Face, and returns pipe-delimited codes in roughly 8–10 seconds.
+- **Scoring** — precision, recall, F1 and match count are computed per encounter against the billed codes, and `unknown` is surfaced when no billable radiology procedure is detected. In the OpenEMR demo the billed codes come from the seeded local mapping, not from a FHIR `Claim` resource.
 
 The model takes a radiology report and returns a pipe-delimited list of CPT codes (e.g. `36569 | 75726 | 99152`), or `unknown` when no billable radiology procedure is present.
 
@@ -60,6 +66,16 @@ Training uses QLoRA (4-bit NF4 + LoRA, rank 16), FlashAttention-2, and multi-GPU
 
 Held-out test set: **4,702 admissions**, **264 distinct CPT codes** (MIMIC-IV, split at the admission level, no hadm_id overlap with training).
 
+![F1 across training stages — SFT 0.442, SFT+GRPO 0.465, augmented SFT 0.556, augmented SFT+GRPO 0.568 — and mean per-code F1 by frequency tier: top-20 0.634, top-50 0.565](docs/images/f1_by_stage.png)
+
+<img src="docs/images/perplexity_by_stage.png" width="560" alt="Per-token perplexity across training stages: 13.00 at base Qwen3-32B, 5.36 after continued pretraining, 1.48 after SFT, flat through GRPO">
+
+Per-token perplexity by stage: base 13.00 → +CPT 5.36 → +SFT 1.48 → +GRPO 1.49 (SFT/GRPO rows measured on the v9/v3b line; see `docs/RESULTS.md`). Top-20 most-frequent-code mean F1 for the final model: 0.634. On a mixed set of 450 radiology + 50 non-radiology discharge notes, the final model outputs `unknown` for 50/50 non-radiology notes. Full tables and per-code numbers are in [`docs/RESULTS.md`](docs/RESULTS.md).
+
+<img src="docs/images/per_code_f1.png" width="620" alt="Per-code F1 for the best-performing CPT codes: 61624 embolization 0.840, 36569 0.833, 36561 0.824, down to 99152 moderate sedation 0.639">
+
+The eleven best-performing codes among the twenty most frequently billed. The full twenty — including the weaker tail, down to 0.242 — are in [`docs/RESULTS.md`](docs/RESULTS.md).
+
 | Model | F1-samples | F1-micro | F1-macro |
 |---|---:|---:|---:|
 | Small-data baseline (SFT v8, n=400) | 0.078 | 0.066 | — |
@@ -67,8 +83,6 @@ Held-out test set: **4,702 admissions**, **264 distinct CPT codes** (MIMIC-IV, s
 | SFT + GRPO (v3b, on v9) | 0.465 | 0.429 | 0.061 |
 | SFT, 10% unknown, 2 epochs | 0.556 | 0.549 | 0.235 |
 | **SFT 10% unknown + GRPO (final)** | **0.568** | **0.566** | 0.157 |
-
-Per-token perplexity by stage: base 13.00 → +CPT 5.36 → +SFT 1.48 → +GRPO 1.49 (SFT/GRPO rows measured on the v9/v3b line; see `docs/RESULTS.md`). Top-20 most-frequent-code mean F1 for the final model: 0.634. On a mixed set of 450 radiology + 50 non-radiology discharge notes, the final model outputs `unknown` for 50/50 non-radiology notes. Full tables and per-code numbers are in [`docs/RESULTS.md`](docs/RESULTS.md).
 
 ## Repository layout
 
